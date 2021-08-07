@@ -3,11 +3,11 @@ from ursina.shaders import normals_shader
 import random
 
 send_away = False
+send_all_away = False
 
+CUBE_COUNT = 400
 
-CUBE_COUNT = 200
-
-FIELD_RANGE = 5
+FIELD_RANGE = 10
 Z_FIELD_RANGE = 20
 Z_EDGE = 150
 
@@ -35,6 +35,8 @@ window.borderless = False               # Show a border
 window.fullscreen = False               # Do not go Fullscreen
 window.exit_button.visible = True      # Do not show the in-game red X that loses the window
 window.fps_counter.enabled = True
+window.color = color.black
+
 
 unique_position_lookup = {}
 
@@ -81,6 +83,15 @@ def get_random_color():
 
 def update():
 
+    if held_keys['8']:  # camera up
+        camera.position += (0, time.dt, 0)  # move up vertically
+    if held_keys['2']:  # camera down
+        camera.position -= (0, time.dt, 0)  # move down vertically
+    if held_keys['6']:  # camera left
+        camera.position += (time.dt, 0, 0)  # move up vertically
+    if held_keys['4']:  # camera right
+        camera.position -= (time.dt, 0, 0)  # move down vertically
+
     for cube in cubes:
         cube.rotation_y += time.dt * cube.y_rotation_speed
         if held_keys['r']:
@@ -99,13 +110,25 @@ def update():
             #     cube.y_rotation_speed = cube.y_rotation_speed - 5
 
     global send_away
+    global send_all_away
+
     if held_keys['j']:
         send_away = True
+        send_all_away = False
     if held_keys['k']:
         send_away = False
+    if held_keys['g']:
+        # Send all away as group
+        send_all_away = True
 
     if send_away:
         send_selected_cubes_away()
+    elif send_all_away:
+        send_all_cubes_away()
+
+def send_all_cubes_away():
+    selected_cube_4 = cubes[random.randint(0, len(cubes) - 1)]
+    send_selected_cube(selected_cube_4, 10)
 
 def send_selected_cubes_away():
 
@@ -122,6 +145,10 @@ def send_selected_cubes_away():
     while selected_cube_3 is None:
         selected_cube_3 = cubes[random.randint(0, len(cubes) -1)]
 
+    change_color(selected_cube_1, color.red)
+    change_color(selected_cube_2, color.red)
+    change_color(selected_cube_3, color.red)
+
     if send_selected_cube(selected_cube_1):
         selected_cube_1 = None
 
@@ -132,8 +159,13 @@ def send_selected_cubes_away():
         selected_cube_3 = None
 
 
+def change_color(selected_cube, color):
+    selected_cube.color = color
 
-def send_selected_cube(selected_cube):
+
+
+
+def send_selected_cube(selected_cube, speed: int = 1):
 
     selected_cube_position = selected_cube.position
     z = selected_cube_position[2]
@@ -144,7 +176,7 @@ def send_selected_cube(selected_cube):
         return True
         # selected_cube = None
     else:
-        z = z + 1
+        z = z + speed
         selected_cube.position = (selected_cube_position[0], selected_cube_position[1], z)
         return False
 
